@@ -24,6 +24,7 @@ find_package(TialTesting REQUIRED)
 
 add_tial_library(${PROJECT_NAME}
 	HEADERS
+		TialVFS.hpp
 		Directory.hpp
 		Driver.hpp
 		Exception.hpp

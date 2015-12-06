@@ -25,6 +25,7 @@ find_package(TialTesting REQUIRED)
 add_tial_library(${PROJECT_NAME}
 	HEADERS
 		TialVFS.hpp
+		Common.hpp
 		Directory.hpp
 		Driver.hpp
 		Exception.hpp
@@ -43,9 +44,9 @@ add_tial_library(${PROJECT_NAME}
 		src/NativeFSDriver.cpp
 		src/Object.cpp
 		src/Root.cpp
-)
-target_link_libraries(${PROJECT_NAME}
-	TialUtility
+
+	LIBRARIES
+		TialUtility
 )
 
 add_tial_test(Test${PROJECT_NAME}

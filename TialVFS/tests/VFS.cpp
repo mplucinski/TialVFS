@@ -582,264 +582,329 @@ class [[Testing::CaseBase]] VFS {
 		}
 	}
 
-	static void driverTestOpenWriteRead(MountPointWrapper root) {
-		// write
-		root->createFile("file")->open() << "what is that...";
-		verifyFileContent(root->get<Tial::VFS::File>("file"), "what is that...");
+	static void driverTestOpenWriteRead(MountPointWrapper root, const std::vector<std::string> &filters) {
+		for(const auto &filter: filters) {
+			std::string fileName = "file"+(!filter.empty() ? "."+filter : "");
 
-		// overwrite
-		root->get<Tial::VFS::File>("file")->open(8, std::ios_base::beg) << "this";
-		verifyFileContent(root->get<Tial::VFS::File>("file"), "what is this...");
+			// write
+			root->createFile(fileName)->open() << "what is that...";
+			verifyFileContent(root->get<Tial::VFS::File>(fileName), "what is that...");
 
-		// append
-		root->get<Tial::VFS::File>("file")->open(0, std::ios_base::end) << " I don't even";
-		verifyFileContent(root->get<Tial::VFS::File>("file"), "what is this... I don't even");
+			// overwrite
+			root->get<Tial::VFS::File>(fileName)->open(8, std::ios_base::beg) << "this";
+			verifyFileContent(root->get<Tial::VFS::File>(fileName), "what is this...");
 
-		// truncate
-		{
-			auto file = [[Check::NoThrow]] root->get<Tial::VFS::File>("file");
-			[[Check::NoThrow]] (file->resize(file->size() - 13));
+			// append
+			root->get<Tial::VFS::File>(fileName)->open(0, std::ios_base::end) << " I don't even";
+			verifyFileContent(root->get<Tial::VFS::File>(fileName), "what is this... I don't even");
+
+			// truncate
+			{
+				auto file = [[Check::NoThrow]] root->get<Tial::VFS::File>(fileName);
+				[[Check::NoThrow]] (file->resize(file->size() - 13));
+			}
+			verifyFileContent(root->get<Tial::VFS::File>(fileName), "what is this...");
+
+			root->get<Tial::VFS::File>(fileName)->remove();
 		}
-		verifyFileContent(root->get<Tial::VFS::File>("file"), "what is this...");
-
-		root->get<Tial::VFS::File>("file")->remove();
 	}
 
-	static void driverTestMapWriteRead(MountPointWrapper root) {
-		// write
-		{
-			auto mapping = [[Check::NoThrow]] root->createFile("file")->map();
-			[[Check::Verify]] mapping.size() == 0u;
-			[[Check::NoThrow]] mapping.resize(15*sizeof(char));
-			[[Check::NoThrow]] memcpy(mapping.template as<char>(), "what is that...", 15*sizeof(char));
-		}
-		verifyFileContent(root->get<Tial::VFS::File>("file"), "what is that...");
+	static void driverTestMapWriteRead(MountPointWrapper root, const std::vector<std::string> &filters) {
+		for(const auto &filter: filters) {
+			std::string fileName = "file" + (!filter.empty() ? "." + filter : "");
 
-		// overwrite
-		{
-			auto mapping = [[Check::NoThrow]] root->get<Tial::VFS::File>("file")->map();
-			[[Check::Verify]] mapping.size() == 15*sizeof(char);
-			mapping.template as<char>()[10] = 'i';
-			mapping.template as<char>()[11] = 's';
-		}
-		verifyFileContent(root->get<Tial::VFS::File>("file"), "what is this...");
+			// write
+			{
+				auto mapping = [[Check::NoThrow]] root->createFile(fileName)->map();
+				[[Check::Verify]] mapping.size() == 0u;
+				[[Check::NoThrow]] mapping.resize(15 * sizeof(char));
+				[[Check::NoThrow]] memcpy(mapping.template as<char>(), "what is that...", 15 * sizeof(char));
+			}
+			verifyFileContent(root->get<Tial::VFS::File>(fileName), "what is that...");
 
-		// append
-		{
-			auto mapping = [[Check::NoThrow]] root->get<Tial::VFS::File>("file")->map();
-			[[Check::Verify]] mapping.size() == 15*sizeof(char);
-			[[Check::NoThrow]] mapping.resize(mapping.size()+13*sizeof(char));
-			[[Check::NoThrow]] memcpy(mapping.template as<char>()+15*sizeof(char), " I don't even", 13*sizeof(char));
-		}
-		verifyFileContent(root->get<Tial::VFS::File>("file"), "what is this... I don't even");
+			// overwrite
+			{
+				auto mapping = [[Check::NoThrow]] root->get<Tial::VFS::File>(fileName)->map();
+				[[Check::Verify]] mapping.size() == 15 * sizeof(char);
+				mapping.template as<char>()[10] = 'i';
+				mapping.template as<char>()[11] = 's';
+			}
+			verifyFileContent(root->get<Tial::VFS::File>(fileName), "what is this...");
 
-		// truncate
-		{
-			auto mapping = [[Check::NoThrow]] root->get<Tial::VFS::File>("file")->map();
-			[[Check::Verify]] mapping.size() == 28*sizeof(char);
-			[[Check::NoThrow]] mapping.resize(mapping.size()-13*sizeof(char));
-		}
-		verifyFileContent(root->get<Tial::VFS::File>("file"), "what is this...");
+			// append
+			{
+				auto mapping = [[Check::NoThrow]] root->get<Tial::VFS::File>(fileName)->map();
+				[[Check::Verify]] mapping.size() == 15 * sizeof(char);
+				[[Check::NoThrow]] mapping.resize(mapping.size() + 13 * sizeof(char));
+				[[Check::NoThrow]] memcpy(mapping.template as<char>() + 15 * sizeof(char), " I don't even", 13 * sizeof(char));
+			}
+			verifyFileContent(root->get<Tial::VFS::File>(fileName), "what is this... I don't even");
 
-		root->get<Tial::VFS::File>("file")->remove();
+			// truncate
+			{
+				auto mapping = [[Check::NoThrow]] root->get<Tial::VFS::File>(fileName)->map();
+				[[Check::Verify]] mapping.size() == 28 * sizeof(char);
+				[[Check::NoThrow]] mapping.resize(mapping.size() - 13 * sizeof(char));
+			}
+			verifyFileContent(root->get<Tial::VFS::File>(fileName), "what is this...");
+
+			root->get<Tial::VFS::File>(fileName)->remove();
+		}
 	}
 
-	static void driverTestStreamFileObject(MountPointWrapper root) {
-		// non-assigned object
-		Tial::VFS::Stream stream;
-		[[Check::Verify]] !stream.is_open();
+	static void driverTestStreamFileObject(MountPointWrapper root, const std::vector<std::string> &filters) {
+		for(const auto &filter: filters) {
+			std::string fileName = "file" + (!filter.empty() ? "." + filter : "");
 
-		// create a file
-		auto file = [[Check::NoThrow]] root->createFile("file");
-		[[Check::Verify]] !stream.is_open();
+			// non-assigned object
+			Tial::VFS::Stream stream;
+			[[Check::Verify]] !stream.is_open();
 
-		// assign stream object to file and write to it
-		stream = [[Check::NoThrow]] file->open();
-		[[Check::Verify]] stream.is_open();
-		stream << "what is that...";
-		stream.flush();
-		verifyFileContent(file, "what is that...");
+			// create a file
+			auto file = [[Check::NoThrow]] root->createFile(fileName);
+			[[Check::Verify]] !stream.is_open();
 
-		// unassign stream
-		stream = [[Check::NoThrow]] Tial::VFS::Stream();
-		[[Check::Verify]] !stream.is_open();
-
-		// reassign it to the same file
-		stream = [[Check::NoThrow]] file->open();
-		[[Check::Verify]] stream.is_open();
-
-		// read data
-		std::vector<char> string(file->size());
-		stream.read(string.data(), string.size());
-		[[Check::Verify]] std::string(string.begin(), string.end()) == "what is that...";
-
-		root->get<Tial::VFS::File>("file")->remove();
-	}
-
-	static void driverTestMappingFileObject(MountPointWrapper root) {
-		// non-assigned object
-		Tial::VFS::Mapping mapping;
-		[[Check::Verify]] !mapping.assigned();
-		[[Check::Verify]] !mapping;
-		[[Check::Throw(Exceptions::UnassignedAccessor)]] mapping.size();
-		[[Check::Throw(Exceptions::UnassignedAccessor)]] mapping.resize(13);
-		[[Check::Throw(Exceptions::UnassignedAccessor)]] mapping.get();
-
-		// create a file
-		auto file = [[Check::NoThrow]] root->createFile("file");
-
-		// assign mapping object to file and write to it
-		mapping = [[Check::NoThrow]] file->map();
-		[[Check::Verify]] mapping.assigned();
-		[[Check::Verify]] mapping;
-		[[Check::NoThrow]] mapping.resize(15);
-		[[Check::NoThrow]] memcpy(mapping.as<char>(), "what is that...", 15*sizeof(char));
-		verifyFileContent(file, "what is that...");
-
-		// unassign mapping
-		mapping = [[Check::NoThrow]] Tial::VFS::Mapping();
-		[[Check::Verify]] !mapping.assigned();
-		[[Check::Verify]] !mapping;
-		[[Check::Throw(Exceptions::UnassignedAccessor)]] mapping.size();
-		[[Check::Throw(Exceptions::UnassignedAccessor)]] mapping.resize(13);
-		[[Check::Throw(Exceptions::UnassignedAccessor)]] mapping.get();
-
-		// reassign it to the same file
-		mapping = [[Check::NoThrow]] file->map();
-
-		// read data
-		[[Check::Verify]] mapping.assigned();
-		[[Check::Verify]] mapping;
-		[[Check::Verify]] mapping.size() == 15u;
-		[[Check::Verify]] std::string(mapping.as<char>(), mapping.size()) == "what is that...";
-
-		root->get<Tial::VFS::File>("file")->remove();
-	}
-
-	static void driverTestMultipleStreams(MountPointWrapper root) {
-		auto file = [[Check::NoThrow]] root->createFile("file");
-		Tial::VFS::Stream stream1 = [[Check::NoThrow]] file->open();
-		Tial::VFS::Stream stream2 = [[Check::NoThrow]] file->open();
-
-		stream1 << "what is that...";
-		stream1.flush();
-		verifyFileContent(file, "what is that...");
-
-		stream2.seekg(0, std::ios_base::end);
-		stream2 << " I don't even";
-		stream2.flush();
-		verifyFileContent(file, "what is that... I don't even");
-
-		root->get<Tial::VFS::File>("file")->remove();
-	}
-
-	static void driverTestMultipleMappings(MountPointWrapper root) {
-		auto file = [[Check::NoThrow]] root->createFile("file");
-		{
-			auto map = [[Check::NoThrow]] file->map();
-			[[Check::NoThrow]] map.resize(15);
-			[[Check::Verify]] map.size() == 15u;
-			memcpy(map.template as<char>(), "what is that...", 15*sizeof(char));
+			// assign stream object to file and write to it
+			stream = [[Check::NoThrow]] file->open();
+			[[Check::Verify]] stream.is_open();
+			stream << "what is that...";
+			stream.flush();
 			verifyFileContent(file, "what is that...");
+
+			// unassign stream
+			stream = [[Check::NoThrow]] Tial::VFS::Stream();
+			[[Check::Verify]] !stream.is_open();
+
+			// reassign it to the same file
+			stream = [[Check::NoThrow]] file->open();
+			[[Check::Verify]] stream.is_open();
+
+			// read data
+			std::vector<char> string(file->size());
+			stream.read(string.data(), string.size());
+			[[Check::Verify]] std::string(string.begin(), string.end()) == "what is that...";
+
+			file->remove();
 		}
-		verifyFileContent(file, "what is that...");
-		{
-			auto map = [[Check::NoThrow]] file->map();
-			[[Check::Verify]] map.size() == 15u;
-			[[Check::NoThrow]] map.resize(map.size()+13);
-			[[Check::Verify]] map.size() == 28u;
-			memcpy(map.template as<char>()+15u, " I don't even", 13*sizeof(char));
-		}
-		verifyFileContent(file, "what is that... I don't even");
-
-		[[Check::NoThrow]] file->resize(1);
-
-		for(int i = 0; i < 10; ++i) {
-			Testing::Thread first([&](){
-				for(int i = 0; i < 100; ++i) {
-					{
-						auto map = [[Check::NoThrow]] file->map();
-						[[Check::NoThrow]] map.resize(0);
-						std::this_thread::sleep_for(10us);
-						[[Check::NoThrow]] map.resize(1);
-						[[Check::NoThrow]] map.template as<char>()[0] = 'A';
-						std::this_thread::sleep_for(20us);
-						[[Check::Verify]] (map.template as<char>()[0]) == 'A';
-					}
-					std::this_thread::sleep_for(10us);
-				}
-			});
-
-			Testing::Thread second([&](){
-				for(int i = 0; i < 100; ++i) {
-					{
-						auto map = [[Check::NoThrow]] file->map();
-						[[Check::NoThrow]] map.resize(0);
-						std::this_thread::sleep_for(10us);
-						[[Check::NoThrow]] map.resize(1);
-						[[Check::NoThrow]] map.template as<char>()[0] = 'B';
-						std::this_thread::sleep_for(10us);
-						[[Check::Verify]] (map.template as<char>()[0]) == 'B';
-					}
-					std::this_thread::sleep_for(10us);
-				}
-			});
-
-			first("first");
-			second("second");
-
-			first.join();
-			second.join();
-		}
-
-		root->get<Tial::VFS::File>("file")->remove();
 	}
 
-	static void driverTestMutlipleStreamsMappings(MountPointWrapper root) {
-		auto file = [[Check::NoThrow]] root->createFile("file");
-		auto stream1 = [[Check::NoThrow]] file->open();
-		auto stream2 = [[Check::NoThrow]] file->open();
+	static void driverTestMappingFileObject(MountPointWrapper root, const std::vector<std::string> &filters) {
+		for(const auto &filter: filters) {
+			std::string fileName = "file" + (!filter.empty() ? "." + filter : "");
 
-		{
-			auto map = [[Check::NoThrow]] file->map();
-			[[Check::Verify]] map.assigned();
-			[[Check::Verify]] map;
-			[[Check::NoThrow]] map.resize(15);
-			[[Check::Verify]] (file->size()) == 15u;
-			[[Check::Verify]] (map.size()) == 15u;
-			memcpy(map.template as<char>(), "what is that...", 15*sizeof(char));
+			// non-assigned object
+			Tial::VFS::Mapping mapping;
+			[[Check::Verify]] !mapping.assigned();
+			[[Check::Verify]] !mapping;
+			[[Check::Throw(Exceptions::UnassignedAccessor)]] mapping.size();
+			[[Check::Throw(Exceptions::UnassignedAccessor)]] mapping.resize(13);
+			[[Check::Throw(Exceptions::UnassignedAccessor)]] mapping.get();
+
+			// create a file
+			auto file = [[Check::NoThrow]] root->createFile(fileName);
+
+			// assign mapping object to file and write to it
+			mapping = [[Check::NoThrow]] file->map();
+			[[Check::Verify]] mapping.assigned();
+			[[Check::Verify]] mapping;
+			[[Check::NoThrow]] mapping.resize(15);
+			[[Check::NoThrow]] memcpy(mapping.as<char>(), "what is that...", 15 * sizeof(char));
+			verifyFileContent(file, "what is that...");
+
+			// unassign mapping
+			mapping = [[Check::NoThrow]] Tial::VFS::Mapping();
+			[[Check::Verify]] !mapping.assigned();
+			[[Check::Verify]] !mapping;
+			[[Check::Throw(Exceptions::UnassignedAccessor)]] mapping.size();
+			[[Check::Throw(Exceptions::UnassignedAccessor)]] mapping.resize(13);
+			[[Check::Throw(Exceptions::UnassignedAccessor)]] mapping.get();
+
+			// reassign it to the same file
+			mapping = [[Check::NoThrow]] file->map();
+
+			// read data
+			[[Check::Verify]] mapping.assigned();
+			[[Check::Verify]] mapping;
+			[[Check::Verify]] mapping.size() == 15u;
+			[[Check::Verify]] std::string(mapping.as<char>(), mapping.size()) == "what is that...";
+
+			file->remove();
 		}
-		verifyFileContent(file, "what is that...");
+	}
 
-		stream1.seekg(0, std::ios_base::end);
-		stream1 << " I don't even";
-		stream1.flush();
-		verifyFileContent(file, "what is that... I don't even");
+	static void driverTestMultipleStreams(MountPointWrapper root, const std::vector<std::string> &filters) {
+		for(const auto &filter: filters) {
+			std::string fileName = "file" + (!filter.empty() ? "." + filter : "");
 
-		{
-			auto map = [[Check::NoThrow]] file->map();
-			[[Check::NoThrow]] map.template as<char>()[10] = 'i';
-			[[Check::NoThrow]] map.template as<char>()[11] = 's';
+			auto file = [[Check::NoThrow]] root->createFile(fileName);
+			Tial::VFS::Stream stream1 = [[Check::NoThrow]] file->open();
+			Tial::VFS::Stream stream2 = [[Check::NoThrow]] file->open();
+
+			stream1 << "what is that...";
+			stream1.flush();
+			verifyFileContent(file, "what is that...");
+
+			stream2.seekg(0, std::ios_base::end);
+			stream2 << " I don't even";
+			stream2.flush();
+			verifyFileContent(file, "what is that... I don't even");
+
+			file->remove();
 		}
+	}
 
-		std::vector<char> string(file->size());
-		stream2.read(string.data(), string.size());
-		[[Check::Verify]] std::string(string.begin(), string.end()) == "what is this... I don't even";
+	static void driverTestMultipleMappings(MountPointWrapper root, const std::vector<std::string> &filters) {
+		for(const auto &filter: filters) {
+			std::string fileName = "file" + (!filter.empty() ? "." + filter : "");
 
-		verifyFileContent(file, "what is this... I don't even");
+			auto file = [[Check::NoThrow]] root->createFile(fileName);
+			{
+				auto map = [[Check::NoThrow]] file->map();
+				[[Check::NoThrow]] map.resize(15);
+				[[Check::Verify]] map.size() == 15u;
+				memcpy(map.template as<char>(), "what is that...", 15 * sizeof(char));
+				verifyFileContent(file, "what is that...");
+			}
+			verifyFileContent(file, "what is that...");
+			{
+				auto map = [[Check::NoThrow]] file->map();
+				[[Check::Verify]] map.size() == 15u;
+				[[Check::NoThrow]] map.resize(map.size() + 13);
+				[[Check::Verify]] map.size() == 28u;
+				memcpy(map.template as<char>() + 15u, " I don't even", 13 * sizeof(char));
+			}
+			verifyFileContent(file, "what is that... I don't even");
 
-		{
-			auto map = [[Check::NoThrow]] file->map();
-			[[Check::NoThrow]] map.resize(map.size() + 5*sizeof(char));
-			[[Check::NoThrow]] memcpy(map.template as<char>()+28, " know", 5*sizeof(char));
+			[[Check::NoThrow]] file->resize(1);
+
+			for(int i = 0; i < 10; ++i) {
+				Testing::Thread first([&]() {
+					for(int i = 0; i < 100; ++i) {
+						{
+							auto map = [[Check::NoThrow]] file->map();
+							[[Check::NoThrow]] map.resize(0);
+							std::this_thread::sleep_for(10us);
+							[[Check::NoThrow]] map.resize(1);
+							[[Check::NoThrow]] map.template as<char>()[0] = 'A';
+							std::this_thread::sleep_for(20us);
+							[[Check::Verify]] (map.template as<char>()[0]) == 'A';
+						}
+						std::this_thread::sleep_for(10us);
+					}
+				});
+
+				Testing::Thread second([&]() {
+					for(int i = 0; i < 100; ++i) {
+						{
+							auto map = [[Check::NoThrow]] file->map();
+							[[Check::NoThrow]] map.resize(0);
+							std::this_thread::sleep_for(10us);
+							[[Check::NoThrow]] map.resize(1);
+							[[Check::NoThrow]] map.template as<char>()[0] = 'B';
+							std::this_thread::sleep_for(10us);
+							[[Check::Verify]] (map.template as<char>()[0]) == 'B';
+						}
+						std::this_thread::sleep_for(10us);
+					}
+				});
+
+				first("first");
+				second("second");
+
+				first.join();
+				second.join();
+			}
+
+			file->remove();
 		}
+	}
 
-		std::vector<char> string2(file->size());
-		stream2.seekg(0, stream2.beg);
-		stream2.read(string2.data(), string2.size());
-		[[Check::Verify]] std::string(string2.begin(), string2.end()) == "what is this... I don't even know";
+	static void driverTestMutlipleStreamsMappings(MountPointWrapper root, const std::vector<std::string> &filters) {
+		for(const auto &filter: filters) {
+			std::string fileName = "file" + (!filter.empty() ? "." + filter : "");
 
-		root->get<Tial::VFS::File>("file")->remove();
+			auto file = [[Check::NoThrow]] root->createFile(fileName);
+			auto stream1 = [[Check::NoThrow]] file->open();
+			auto stream2 = [[Check::NoThrow]] file->open();
+
+			{
+				auto map = [[Check::NoThrow]] file->map();
+				[[Check::Verify]] map.assigned();
+				[[Check::Verify]] map;
+				[[Check::NoThrow]] map.resize(15);
+				[[Check::Verify]] (file->size()) == 15u;
+				[[Check::Verify]] (map.size()) == 15u;
+				memcpy(map.template as<char>(), "what is that...", 15 * sizeof(char));
+			}
+			verifyFileContent(file, "what is that...");
+
+			stream1.seekg(0, std::ios_base::end);
+			stream1 << " I don't even";
+			stream1.flush();
+			verifyFileContent(file, "what is that... I don't even");
+
+			{
+				auto map = [[Check::NoThrow]] file->map();
+				[[Check::NoThrow]] map.template as<char>()[10] = 'i';
+				[[Check::NoThrow]] map.template as<char>()[11] = 's';
+			}
+
+			std::vector<char> string(file->size());
+			stream2.read(string.data(), string.size());
+			[[Check::Verify]] std::string(string.begin(), string.end()) == "what is this... I don't even";
+
+			verifyFileContent(file, "what is this... I don't even");
+
+			{
+				auto map = [[Check::NoThrow]] file->map();
+				[[Check::NoThrow]] map.resize(map.size() + 5 * sizeof(char));
+				[[Check::NoThrow]] memcpy(map.template as<char>() + 28, " know", 5 * sizeof(char));
+			}
+
+			std::vector<char> string2(file->size());
+			stream2.seekg(0, stream2.beg);
+			stream2.read(string2.data(), string2.size());
+			[[Check::Verify]] std::string(string2.begin(), string2.end()) == "what is this... I don't even know";
+
+			file->remove();
+		}
+	}
+
+	static void driverTestFilter(MountPointWrapper root, const std::string &filter, const std::string &encoded) {
+		std::string fileName = "file" + (!filter.empty() ? "." + filter : "");
+		{
+			auto file = [[Check::NoThrow]] root->createFile(fileName);
+			file.open() << "what is this?";
+
+			{
+				auto stream = [[Check::NoThrow]] file->open(0, std::ios_base::begin, Tial::VFS::File::OpenFlag::Raw);
+				std::vector<char> string(file->size());
+				stream.read(string.data(), string.size());
+				[[Check::Verify]] std::string(string.begin(), string.end()) == encoded;
+			}{
+				auto map = [[Check::NoThrow]] file->map(Tial::VFS::File::MapFlag::Raw);
+				[[Check::Verify]] std::experimental::string_view(map.template as<char>(), map.size()) == encoded;
+			}
+
+			file->remove();
+		}{
+			auto file = [[Check::NoThrow]] root->createFile(fileName);
+			{
+				auto map = [[Check::NoThrow]] file->map();
+			}
+
+			{
+				auto stream = [[Check::NoThrow]] file->open(0, std::ios_base::begin, Tial::VFS::File::OpenFlag::Raw);
+				std::vector<char> string(file->size());
+				stream.read(string.data(), string.size());
+				[[Check::Verify]] std::string(string.begin(), string.end()) == encoded;
+			}{
+				auto map = [[Check::NoThrow]] file->map();
+				[[Check::Verify]] std::experimental::string_view(map.template as<char>(), map.size()) == encoded;
+			}
+
+			file->remove();
+		}
 	}
 
 	static void driverTestComplexStructure(MountPointWrapper root) {
@@ -899,6 +964,8 @@ class [[Testing::CaseBase]] VFS {
 		Tial::Utility::Logger::setLoggingLevel(Tial::Utility::Logger::Level::Info, "Tial::Utility::Path");
 		Tial::Utility::Logger::setLoggingLevel(Tial::Utility::Logger::Level::Info, "Tial::Utility::Wildcards");
 
+		auto filters = {""s, "xz"s};
+
 		driverTestCreateRemoveDirectories(initFunction());
 		driverTestCreateRemoveFiles(initFunction());
 		driverTestList(initFunction());
@@ -907,13 +974,15 @@ class [[Testing::CaseBase]] VFS {
 		driverTestInvalidateOnDriverRequest(initFunction());
 		driverTestInvalidateOnParentRemoval(initFunction());
 		driverTestInvalidateOnUnmount(initFunction());
-		driverTestOpenWriteRead(initFunction());
-		driverTestMapWriteRead(initFunction());
-		driverTestStreamFileObject(initFunction());
-		driverTestMappingFileObject(initFunction());
-		driverTestMultipleStreams(initFunction());
-		driverTestMultipleMappings(initFunction());
-		driverTestMutlipleStreamsMappings(initFunction());
+		driverTestOpenWriteRead(initFunction(), filters);
+		driverTestMapWriteRead(initFunction(), filters);
+		driverTestStreamFileObject(initFunction(), filters);
+		driverTestMappingFileObject(initFunction(), filters);
+		driverTestMultipleStreams(initFunction(), filters);
+		driverTestMultipleMappings(initFunction(), filters);
+		driverTestMutlipleStreamsMappings(initFunction(), filters);
+		driverTestFilter(initFunction(), "", "what is this?");
+		dirverTestFilter(initFunction(), "xz", "<COMPRESSED>");
 
 		driverTestComplexStructure(initFunction());
 	}

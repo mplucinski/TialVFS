@@ -1,0 +1,8 @@
+name='TialVFS'
+dependencies={
+	'Tial': repositories.Git(
+		url='https://github.com/mplucinski/Tial.git',
+		branch='develop'
+	)
+}
+source='.'

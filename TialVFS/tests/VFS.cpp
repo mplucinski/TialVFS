@@ -7,6 +7,8 @@
 #include <thread>
 #include <boost/algorithm/string.hpp>
 
+#define TIAL_MODULE "Test/Tial::VFS"
+
 [[Tial::Testing::Typedef]] namespace Testing = Tial::Testing;
 [[Tial::Testing::Typedef]] namespace Check = Tial::Testing::Check;
 
@@ -940,21 +942,32 @@ class [[Testing::Case]] MemoryDriver: public VFS<MemoryDriver> {
 };
 
 class [[Testing::Case]] NativeFsDriver: public VFS<NativeFsDriver> {
+	const std::string testspace = "TestTialVFS_testspace";
+
 	void operator()() {
+		Tial::Utility::NativeDirectory directory = Tial::Utility::NativeDirectory::current();
+		bool found = false;
+		do {
+			LOGD << "Looking for \"" << testspace << "\" in \"" << directory.path() << "\"";
+			for(const auto child: directory.content())
+				if(child->path().basename() == testspace) {
+					found = true;
+					directory = directory.path()/testspace;
+				}
+
+			if(!found)
+				directory = directory.path().parent();
+		} while(!found);
+
 		driverTests(std::bind(
 			driverTestInit<Tial::VFS::NativeFSDriver, const Tial::Utility::NativePath &>,
 			"",
-			Tial::Utility::NativeDirectory::current().path()/"testspace"
+			directory.path()
 		));
 		driverTests(std::bind(
 			driverTestInit<Tial::VFS::NativeFSDriver, const Tial::Utility::NativePath &>,
 			"mnt/test",
-			Tial::Utility::NativeDirectory::current().path()/"testspace"
-		));
-		driverTests(std::bind(
-			driverTestInit<Tial::VFS::NativeFSDriver, const Tial::Utility::NativePath &>,
-			"",
-			"testspace"
+			directory.path()
 		));
 	}
 };

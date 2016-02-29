@@ -30,5 +30,10 @@ project(TialVFS
 enable_testing()
 set(CTEST_OUTPUT_ON_FAILURE ON)
 
+find_package(TialUtility REQUIRED)
+find_package(TialTesting REQUIRED)
+
+tial_set_common_settings()
+
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}")
 add_subdirectory(TialVFS)

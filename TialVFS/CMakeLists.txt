@@ -48,11 +48,14 @@ add_tial_library(${PROJECT_NAME}
 	LIBRARIES
 		TialUtility
 )
+target_include_directories(${PROJECT_NAME}
+	PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/.."
+)
 
 add_tial_test(Test${PROJECT_NAME}
 	SOURCES tests/VFS.cpp
 	LIBRARIES ${PROJECT_NAME}
 )
 add_custom_command(TARGET Test${PROJECT_NAME}
-	COMMAND ${CMAKE_COMMAND} -E "make_directory" "${CMAKE_CURRENT_BINARY_DIR}/testspace"
+	COMMAND ${CMAKE_COMMAND} -E "make_directory" "$<TARGET_PROPERTY:Test${PROJECT_NAME},RUNTIME_OUTPUT_DIRECTORY>/Test${PROJECT_NAME}_testspace"
 )

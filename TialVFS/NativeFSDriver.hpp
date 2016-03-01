@@ -9,6 +9,11 @@
 
 #include <boost/predef.h>
 
+#if BOOST_OS_WINDOWS
+#define NOMINMAX
+#include <Windows.h>
+#endif
+
 #define TIAL_MODULE "Tial::VFS::NativeFSDriver"
 
 namespace Tial {
@@ -24,6 +29,8 @@ class TIALVFS_EXPORT NativeFSDriver: public Driver {
 		Utility::NativePath nativePath;
 #if (BOOST_OS_UNIX || BOOST_OS_MACOS)
 		int fd = -1;
+#elif BOOST_OS_WINDOWS
+        HANDLE handle = INVALID_HANDLE_VALUE;
 #else
 #error "Platform not supported"
 #endif
@@ -88,9 +95,11 @@ class TIALVFS_EXPORT NativeFSDriver: public Driver {
 
 	class NativeMappedFile: public NativeFileDescriptor, public Driver::MappedFile {
 	public:
+        void *_ptr = nullptr;
 #if (BOOST_OS_UNIX || BOOST_OS_MACOS)
-		void *_ptr = nullptr;
 		uintmax_t _size = 0;
+#elif BOOST_OS_WINDOWS
+        HANDLE mapping = nullptr;
 #else
 #error "Platform not supported"
 #endif

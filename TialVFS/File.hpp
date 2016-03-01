@@ -15,9 +15,21 @@ class Stream;
 
 class TIALVFS_EXPORT FileDevice {
 	std::shared_ptr<Driver::OpenFile> file;
-	mutable std::streampos pos = 0;
 
-	FileDevice() = default;
+    mutable std::streampos pos
+//FIXME: workaround for bug in Clang/C2 (https://llvm.org/bugs/show_bug.cgi?id=23542)
+#if !(BOOST_COMP_CLANG && BOOST_OS_WINDOWS)
+    = 0
+#endif
+    ;
+
+    FileDevice()
+//FIXME: workaround for bug in Clang/C2 (https://llvm.org/bugs/show_bug.cgi?id=23542)
+#if !(BOOST_COMP_CLANG && BOOST_OS_WINDOWS)
+    = default
+#endif
+    ;
+
 	explicit FileDevice(const std::shared_ptr<Driver::OpenFile> &file);
 public:
 	typedef char char_type;

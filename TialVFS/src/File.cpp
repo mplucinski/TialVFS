@@ -6,6 +6,11 @@
 
 #define TIAL_MODULE "Tial::VFS::File"
 
+//FIXME: workaround for bug in Clang/C2 (https://llvm.org/bugs/show_bug.cgi?id=23542)
+#if (BOOST_COMP_CLANG && BOOST_OS_WINDOWS)
+Tial::VFS::FileDevice::FileDevice(): pos(0) {}
+#endif
+
 Tial::VFS::FileDevice::FileDevice(const std::shared_ptr<Driver::OpenFile> &file): file(file) {}
 
 std::streamsize Tial::VFS::FileDevice::read(char *buffer, std::streamsize bufferSize) const {
